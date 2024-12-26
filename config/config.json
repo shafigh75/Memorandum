@@ -1,0 +1,7 @@
+{
+  "http_port": ":6060",
+  "rpc_port": ":1234",
+  "cleanup_interval": 10,
+  "auth_enabled": true,
+  "auth_token": "f5e0c51b7f3c6e6b57deb13b3017c32e"
+}
