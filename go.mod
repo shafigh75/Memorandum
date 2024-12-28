@@ -1,4 +1,4 @@
-module db
+module Memorandum
 
 go 1.23.1
 
