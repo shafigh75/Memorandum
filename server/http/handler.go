@@ -15,11 +15,11 @@ type APIResponse struct {
 
 // Handler struct to hold the store
 type Handler struct {
-	Store *db.InMemoryStore
+	Store *db.ShardedInMemoryStore
 }
 
 // NewHandler creates a new HTTP handler.
-func NewHandler(store *db.InMemoryStore) *Handler {
+func NewHandler(store *db.ShardedInMemoryStore) *Handler {
 	return &Handler{Store: store}
 }
 

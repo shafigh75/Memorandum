@@ -22,7 +22,7 @@ func main() {
 		return
 	}
 
-	store := db.NewInMemoryStore()
+	store := db.NewShardedInMemoryStore(config.NumShards)
 
 	// Start the cleanup routine based on the config
 	store.StartCleanupRoutine(time.Duration(config.CleanupInterval) * time.Second)

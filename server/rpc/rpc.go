@@ -22,7 +22,7 @@ type RPCResponse struct {
 
 // RPCService provides the RPC methods for the InMemoryStore.
 type RPCService struct {
-	Store *db.InMemoryStore
+	Store *db.ShardedInMemoryStore
 }
 
 // RPCSet sets a key-value pair in the store.
@@ -52,7 +52,7 @@ func (s *RPCService) RPCDelete(req *RPCRequest, resp *RPCResponse) error {
 }
 
 // StartRPCServer starts the RPC server.
-func StartRPCServer(store *db.InMemoryStore, port string) {
+func StartRPCServer(store *db.ShardedInMemoryStore, port string) {
 	rpcService := &RPCService{Store: store}
 	rpc.Register(rpcService)
 
