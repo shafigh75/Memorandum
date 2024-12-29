@@ -6,8 +6,6 @@
 </p>
 <hr>
 
-To write a README file for the Memorandum project, we need to provide an overview of the project, its features, usage instructions, and any other relevant information. Here's an example README file for the Memorandum project based on the typical structure and best practices:
-
 ---
   
 ## Overview
