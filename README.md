@@ -6,38 +6,100 @@
 </p>
 <hr>
 
-# Memorandum: An Open-Source Alternative to Proprietary Databases
+To write a README file for the Memorandum project, we need to provide an overview of the project, its features, usage instructions, and any other relevant information. Here's an example README file for the Memorandum project based on the typical structure and best practices:
 
-Memorandum is an open-source, self-hosted key-value storage system developed in response to recent changes in popular database licensing models (read [this](https://www.theregister.com/2024/03/22/redis_changes_license/) for details). This project aims to provide a straightforward, customizable, and community-driven alternative to proprietary solutions.
-<br>
+---
+  
+## Overview
+**Memorandum** is an open-source, self-hosted, sharded in-memory key-value store written in Go, designed for efficient storage and retrieval of data with support for TTL (time-to-live) and Write-Ahead Logging (WAL). It was developed in response to recent changes in popular database licensing models (read [this](https://www.theregister.com/2024/03/22/redis_changes_license/) for details). This project serves as a learning resource for building in-memory databases and understanding database internals.
 
 ## Background
 
 The recent shift towards more restrictive licensing models in some popular databases (more specifically redis) has led many developers to reconsider their approach to data storage. As a response to these changes, i've created Memorandum - a lightweight, easy-to-use key-value store that puts control firmly in the hands of its users. 
 
-## Key Features
+## Features
+- **In-Memory Storage**: Fast access to key-value pairs stored in memory.
+- **Sharded Architecture**: Data is distributed across multiple shards to reduce contention and improve concurrency.
+- **TTL Support**: Optional time-to-live for each key to automatically expire data.
+- **Write-Ahead Logging (WAL)**: Logs write operations to ensure data durability and facilitate recovery.
+- **interfaces**: Implemented as a command-line interface and a network server with two http and RPC interfaces so far.
 
-- **Open Source**: Built entirely on open-source technologies, ensuring transparency and freedom from restrictive licensing terms.
-- **Simple API**: Intuitive interface for storing and retrieving data, making it easy to integrate into various projects.
-- **Self-Hosted**: Run Memorandum on your own infrastructure, avoiding lock-in to any particular provider.
-- **Customizable**: Modify the codebase to suit your specific needs or add features as required.
+## Installation
+To get started with Memorandum, clone the repository and build the project:
 
-## Technical Details
+```sh
+git clone https://github.com/shafigh75/Memorandum.git
+cd Memorandum
+go build
+```
 
-- Written in Go, leveraging its performance and simplicity.
-- Designed for ease of deployment and maintenance.
-- Implemented as both a command-line interface and a network server.
-- Utilizes a simple key-value structure with optional expiration support.
+## Usage
+### Running the Server
+To start the Memorandum server, run the following command:
 
-## Why Choose Memorandum?
+```sh
+./Memorandum
+```
 
-1. **Avoid Licensing Risks**: By choosing an open-source solution, you mitigate risks associated with restrictive licensing terms.
-2. **Full Control**: Self-hosting gives you complete control over your data and infrastructure.
-3. **Flexibility**: Easy to customize and extend to meet specific project requirements.
+### Configuration
+Memorandum uses a configuration file to set various parameters such as the number of shards, WAL file path, buffer size, and flush interval. Update the `config.yaml` file with your desired settings.
 
-## Getting Started
+```yaml
+# Example config.yaml
+walPath: "data/wal.log"
+walBufferSize: 100
+walFlushInterval: 10
+numShards: 16
+```
 
-[Insert instructions for cloning, building, and running Memorandum]
+### Example Code
+Here is an example of how to use the Memorandum library in your Go project:
+
+```go
+package main
+
+import (
+    "fmt"
+    "Memorandum/db"
+    "time"
+)
+
+func main() {
+    wal, err := db.NewWAL("data/wal.log", 100, 10*time.Second)
+    if err != nil {
+        panic(err)
+    }
+
+    store := db.NewShardedInMemoryStore(16, wal)
+    defer store.Close()
+
+    // Set a key-value pair with TTL
+    store.Set("foo", "bar", 30) // TTL of 30 seconds
+
+    // Get the value
+    value, exists := store.Get("foo")
+    if exists {
+        fmt.Println("Value:", value)
+    } else {
+        fmt.Println("Key not found or expired")
+    }
+
+    // Delete the key
+    store.Delete("foo")
+}
+```
+
+## Contributing
+Contributions are welcome! If you have suggestions for improvements or new features, feel free to open an issue or submit a pull request.
+
+## License
+This project is licensed under the GPL-V3 License. See the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+- Inspired by various in-memory database projects and resources.
+- Thanks to the Go community for their excellent documentation and support.
+
+---
 
 
 ## Disclaimer
@@ -47,10 +109,10 @@ This is a simple in-memory database implementation which was built as a hobby pr
 <hr>
 
 ### TODOS:
-- [ ] add WAL logs using binary format
-- [ ] add logging capabilities and use log file instead of Println
-- [ ] add graceful shutdown when app is terminated
+- [x] add WAL logs using binary format
+- [x] add logging capabilities and use log file instead of Println
+- [x] add graceful shutdown when app is terminated
 - [ ] add Postmam collection / swagger docs or some sort of docs + improve CLI helps and docs
 - [ ] add bash script or Makefile to simplify build and running process
-- [ ] add details in README.md
+- [x] add details in README.md
 - [ ] next level : add clustering and high Availability
