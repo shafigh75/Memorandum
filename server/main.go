@@ -5,24 +5,52 @@ import (
 	"Memorandum/server/db"
 	httpHandler "Memorandum/server/http"
 	rpcHandler "Memorandum/server/rpc"
+	Logger "Memorandum/utils/logger"
 	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
 
+func printBanner(name string) {
+	// Define the banner style
+	border := strings.Repeat("=", len(name)+4)
+	starBorder := strings.Repeat("*", len(name)+4)
+
+	// Print the banner
+	fmt.Println(starBorder)
+	fmt.Printf("* %s *\n", name)
+	fmt.Println(border)
+	fmt.Println("In-memory database for efficient data management.")
+	fmt.Println(starBorder)
+}
+
 func main() {
+	printBanner("Memorandum")
 	// Load configuration
-	config, err := config.LoadConfig("config/config.json")
+	confPath := "config/config.json"
+	config, err := config.LoadConfig(confPath)
 	if err != nil {
 		fmt.Println("Error loading config:", err)
 		return
 	}
 
-	store := db.NewShardedInMemoryStore(config.NumShards)
+	store, err := db.LoadConfigAndCreateStore(confPath)
+	if err != nil {
+		fmt.Println("Error creating Store:", err)
+		return
+	}
+
+	httpLogPath := config.HttpLogPath
+	httpLogger, err := Logger.NewLogger(httpLogPath)
+	if err != nil {
+		fmt.Println("Error creating Logger:", err)
+		return
+	}
 
 	// Start the cleanup routine based on the config
 	store.StartCleanupRoutine(time.Duration(config.CleanupInterval) * time.Second)
@@ -30,7 +58,7 @@ func main() {
 	// Create a new HTTP server
 	httpServer := &http.Server{
 		Addr:    config.HTTPPort,
-		Handler: httpHandler.NewHandler(store), // Use the handler created from the store
+		Handler: httpHandler.NewHandler(store, httpLogger), // Use the handler created from the store
 	}
 
 	// Start the HTTP server in a goroutine
@@ -42,7 +70,9 @@ func main() {
 	}()
 
 	// Start the RPC server in a goroutine
-	go rpcHandler.StartRPCServer(store, config.RPCPort)
+	rpcLogPath := config.RPCLogPath
+	rpcLogger, err := Logger.NewLogger(rpcLogPath)
+	go rpcHandler.StartRPCServer(store, config.RPCPort, rpcLogger)
 
 	// Channel to listen for shutdown signals
 	signalChan := make(chan os.Signal, 1)
@@ -61,7 +91,7 @@ func main() {
 		fmt.Println("Error shutting down HTTP server:", err)
 	}
 
-	// cleaup the store gracefully
-	store.Cleanup()
+	// close the store gracefully
+	store.Close()
 	fmt.Println("Shutdown complete.")
 }

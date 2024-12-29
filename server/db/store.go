@@ -2,7 +2,13 @@ package db
 
 import (
 	"Memorandum/config" // Adjust the import path as necessary
+	"bytes"
+	"compress/gzip"
+	"encoding/json"
+	"fmt"
 	"hash/fnv"
+	"io"
+	"os"
 	"sync"
 	"time"
 )
@@ -11,6 +17,114 @@ import (
 type ValueWithTTL struct {
 	Value      string
 	Expiration int64 // Unix timestamp in seconds
+}
+
+// WriteAheadLogEntry represents a log entry for WAL.
+type WriteAheadLogEntry struct {
+	Action    string `json:"action"`
+	Key       string `json:"key"`
+	Value     string `json:"value"`
+	TTL       int64  `json:"ttl"`
+	Timestamp int64  `json:"timestamp"`
+}
+
+// WAL represents the Write-Ahead Log.
+type WAL struct {
+	file        *os.File
+	mu          sync.Mutex
+	buffer      []WriteAheadLogEntry
+	bufferSize  int
+	flushTicker *time.Ticker
+	flushDone   chan struct{}
+	gzipWriter  *gzip.Writer
+}
+
+// NewWAL creates a new WAL instance.
+func NewWAL(filename string, bufferSize int, flushInterval time.Duration) (*WAL, error) {
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	gzipWriter := gzip.NewWriter(file)
+
+	wal := &WAL{
+		file:        file,
+		buffer:      make([]WriteAheadLogEntry, 0, bufferSize),
+		bufferSize:  bufferSize,
+		flushTicker: time.NewTicker(flushInterval),
+		flushDone:   make(chan struct{}),
+		gzipWriter:  gzipWriter,
+	}
+
+	go wal.startFlushRoutine()
+	return wal, nil
+}
+
+var isWalRecovery bool
+
+// Log writes a log entry to the WAL.
+func (wal *WAL) Log(entry WriteAheadLogEntry) error {
+	wal.mu.Lock()
+	defer wal.mu.Unlock()
+
+	wal.buffer = append(wal.buffer, entry)
+	if len(wal.buffer) >= wal.bufferSize {
+		return wal.flush()
+	}
+	return nil
+}
+
+// flush writes the buffered log entries to the WAL file.
+func (wal *WAL) flush() error {
+	if len(wal.buffer) == 0 {
+		return nil
+	}
+
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	for _, entry := range wal.buffer {
+		if err := encoder.Encode(entry); err != nil {
+			return err
+		}
+	}
+
+	// Write the compressed data to the gzip writer
+	if _, err := wal.gzipWriter.Write(buf.Bytes()); err != nil {
+		return err
+	}
+
+	wal.buffer = wal.buffer[:0] // Clear the buffer
+	return nil
+}
+
+// startFlushRoutine periodically flushes the log entries.
+func (wal *WAL) startFlushRoutine() {
+	defer close(wal.flushDone)
+	for {
+		select {
+		case <-wal.flushTicker.C:
+			wal.mu.Lock()
+			if err := wal.flush(); err != nil {
+				fmt.Println("Error flushing WAL: ", err.Error())
+			}
+			wal.mu.Unlock()
+		}
+	}
+}
+
+// Close closes the WAL file and flushes any remaining entries.
+func (wal *WAL) Close() error {
+	wal.flushTicker.Stop()
+	wal.mu.Lock()
+	defer wal.mu.Unlock()
+	if err := wal.flush(); err != nil {
+		return err
+	}
+	if err := wal.gzipWriter.Close(); err != nil {
+		return err
+	}
+	return wal.file.Close()
 }
 
 // mapShard represents a single shard of the in-memory store.
@@ -23,10 +137,11 @@ type mapShard struct {
 type ShardedInMemoryStore struct {
 	shards    []*mapShard
 	numShards int
+	wal       *WAL
 }
 
 // NewShardedInMemoryStore creates a new instance of ShardedInMemoryStore.
-func NewShardedInMemoryStore(numShards int) *ShardedInMemoryStore {
+func NewShardedInMemoryStore(numShards int, wal *WAL) *ShardedInMemoryStore {
 	shards := make([]*mapShard, numShards)
 	for i := 0; i < numShards; i++ {
 		shards[i] = &mapShard{
@@ -36,6 +151,7 @@ func NewShardedInMemoryStore(numShards int) *ShardedInMemoryStore {
 	return &ShardedInMemoryStore{
 		shards:    shards,
 		numShards: numShards,
+		wal:       wal,
 	}
 }
 
@@ -54,6 +170,21 @@ func (s *ShardedInMemoryStore) Set(key, value string, ttl int64) {
 	defer shard.mu.Unlock()
 	expiration := time.Now().Add(time.Duration(ttl) * time.Second).Unix()
 	shard.store[key] = ValueWithTTL{Value: value, Expiration: expiration}
+
+	// Log the operation
+	entry := WriteAheadLogEntry{
+		Action:    "set",
+		Key:       key,
+		Value:     value,
+		TTL:       ttl,
+		Timestamp: time.Now().Unix(),
+	}
+	if !isWalRecovery {
+		if err := s.wal.Log(entry); err != nil {
+			// Handle logging error (e.g., log it)
+			fmt.Println("Error writing to WAL: ", err.Error())
+		}
+	}
 }
 
 // Get retrieves a value by key from the store, checking for expiration.
@@ -80,6 +211,19 @@ func (s *ShardedInMemoryStore) Delete(key string) {
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
 	delete(shard.store, key)
+
+	// Log the delete operation
+	entry := WriteAheadLogEntry{
+		Action:    "delete",
+		Key:       key,
+		Timestamp: time.Now().Unix(),
+	}
+	if !isWalRecovery {
+		if err := s.wal.Log(entry); err != nil {
+			// Handle logging error (e.g., log it)
+			fmt.Println("Error writing to WAL: ", err.Error())
+		}
+	}
 }
 
 // Cleanup removes expired keys from the store concurrently.
@@ -108,11 +252,83 @@ func (s *ShardedInMemoryStore) StartCleanupRoutine(interval time.Duration) {
 	}()
 }
 
+// RecoverFromWAL replays the WAL to restore the state of the store.
+// RecoverFromWAL replays the WAL to restore the state of the store.
+func (s *ShardedInMemoryStore) RecoverFromWAL(filename string) error {
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	gzipReader, err := gzip.NewReader(file)
+	if err != nil && err.Error() != "EOF" {
+		return err
+	} else if err != nil && err.Error() == "EOF" {
+		return nil
+	}
+	defer gzipReader.Close()
+
+	decoder := json.NewDecoder(gzipReader)
+	isWalRecovery = true
+	for {
+		var entry WriteAheadLogEntry
+		if err := decoder.Decode(&entry); err != nil {
+			if err == io.EOF {
+				break // End of file reached, exit the loop gracefully
+			}
+			return err // Return any other error
+		}
+
+		switch entry.Action {
+		case "set":
+			expiredAt := time.Unix(entry.Timestamp, 0).Add(time.Duration(entry.TTL) * time.Second).Unix()
+			nowDate := time.Now().Unix()
+			if nowDate > expiredAt {
+				break
+			}
+			s.Set(entry.Key, entry.Value, entry.TTL)
+		case "delete":
+			expiredAt := time.Unix(entry.Timestamp, 0).Add(time.Duration(entry.TTL) * time.Second).Unix()
+			nowDate := time.Now().Unix()
+			if nowDate > expiredAt {
+				break
+			}
+			s.Delete(entry.Key)
+		}
+	}
+	isWalRecovery = false
+	return nil
+}
+
 // LoadConfigAndCreateStore loads the configuration and creates a new sharded store.
 func LoadConfigAndCreateStore(configPath string) (*ShardedInMemoryStore, error) {
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		return nil, err
 	}
-	return NewShardedInMemoryStore(cfg.NumShards), nil
+
+	walPath := cfg.WalPath
+	bufferSize := cfg.WalBufferSize                                    // Assuming you have this in your config
+	flushInterval := time.Duration(cfg.WalFlushInterval) * time.Second // Assuming you have this in your config
+
+	wal, err := NewWAL(walPath, bufferSize, flushInterval)
+	if err != nil {
+		return nil, err
+	}
+
+	store := NewShardedInMemoryStore(cfg.NumShards, wal)
+
+	// Recover the state from WAL
+	if err := store.RecoverFromWAL(walPath); err != nil {
+		return nil, err
+	}
+
+	return store, nil
+}
+
+// Close cleans up resources, including closing the WAL.
+func (s *ShardedInMemoryStore) Close() error {
+	s.Cleanup()
+	return s.wal.Close()
 }

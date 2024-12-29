@@ -1,0 +1,4 @@
+{
+  "timestamp": "2024-12-29T13:15:27+03:30",
+  "message": "{\"method\":\"rpc-get\",\"request\":{\"key\":\"mykey\",\"ttl\":0},\"timestamp\":\"2024-12-29T13:15:27+03:30\"}"
+}

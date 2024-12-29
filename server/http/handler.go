@@ -2,8 +2,10 @@ package handler
 
 import (
 	"Memorandum/server/db"
+	"Memorandum/utils/logger"
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 // APIResponse represents a standard API response.
@@ -15,16 +17,35 @@ type APIResponse struct {
 
 // Handler struct to hold the store
 type Handler struct {
-	Store *db.ShardedInMemoryStore
+	Store  *db.ShardedInMemoryStore
+	Logger *logger.Logger
 }
 
 // NewHandler creates a new HTTP handler.
-func NewHandler(store *db.ShardedInMemoryStore) *Handler {
-	return &Handler{Store: store}
+func NewHandler(store *db.ShardedInMemoryStore, logger *logger.Logger) *Handler {
+	return &Handler{Store: store, Logger: logger}
 }
 
 // ServeHTTP implements the http.Handler interface.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Create a structured log message
+	logMessage := map[string]interface{}{
+		"timestamp": time.Now().Format(time.RFC3339),
+		"method":    r.Method,
+		"url":       r.URL.String(),
+		"ip":        r.RemoteAddr,
+	}
+
+	// Convert the log message to JSON
+	logJSON, err := json.Marshal(logMessage)
+	if err != nil {
+		// Handle JSON marshaling error (optional)
+		h.Logger.Log("Error marshaling log message to JSON")
+		return
+	}
+
+	// Log the structured message as a JSON string
+	h.Logger.Log(string(logJSON))
 	switch r.Method {
 	case http.MethodPost:
 		h.SetHandler(w, r)

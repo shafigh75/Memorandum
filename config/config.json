@@ -1,6 +1,11 @@
 {
   "http_port": ":6060",
   "rpc_port": ":1234",
+  "WAL_path": "/home/test/Memorandum/data/WAL.gz",
+  "http_log_path": "/home/test/Memorandum/logs/http.log",
+  "rpc_log_path": "/home/test/Memorandum/logs/rpc.log",
+  "WAL_bufferSize": 4096,
+  "WAL_flushInterval": 30,
   "cleanup_interval": 10,
   "auth_enabled": true,
   "shard_count": 32,
