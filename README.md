@@ -40,13 +40,21 @@ To start the Memorandum server, run the following command:
 ### Configuration
 Memorandum uses a configuration file to set various parameters such as the number of shards, WAL file path, buffer size, and flush interval. Update the `config.yaml` file with your desired settings.
 
-```yaml
-# Example config.yaml
-walPath: "data/wal.log"
-walBufferSize: 100
-walFlushInterval: 10
-numShards: 16
-```
+```json
+# Example config/config.json
+{
+  "http_port": ":6060",
+  "rpc_port": ":1234",
+  "WAL_path": "/home/test/Memorandum/data/WAL.gz",
+  "http_log_path": "/home/test/Memorandum/logs/http.log",
+  "rpc_log_path": "/home/test/Memorandum/logs/rpc.log",
+  "WAL_bufferSize": 4096,
+  "WAL_flushInterval": 30,
+  "cleanup_interval": 10,
+  "auth_enabled": false,
+  "shard_count": 32,
+  "auth_token": "f5e0c51b7f3c6e6b57deb13b3017c32e"
+}```
 
 ### Example Code
 Here is an example of how to use the Memorandum library in your Go project:
