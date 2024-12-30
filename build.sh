@@ -41,6 +41,7 @@ build_main() {
 # Function to build the CLI
 build_cli() {
     echo -e "${YELLOW}Building the CLI...${NC}"
+    pwd
     go build -o Memorandum-cli ./cli
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}CLI built successfully as 'Memorandum-cli'!${NC}"
