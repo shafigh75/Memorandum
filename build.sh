@@ -41,7 +41,6 @@ build_main() {
 # Function to build the CLI
 build_cli() {
     echo -e "${YELLOW}Building the CLI...${NC}"
-    cd Memorandum || { echo -e "${RED}Failed to change directory to 'Memorandum'.${NC}"; exit 1; }
     go build -o Memorandum-cli ./cli
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}CLI built successfully as 'Memorandum-cli'!${NC}"
