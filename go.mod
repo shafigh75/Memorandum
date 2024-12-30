@@ -1,4 +1,4 @@
-module Memorandum
+module github.com/shafigh75/Memorandum
 
 go 1.23.1
 

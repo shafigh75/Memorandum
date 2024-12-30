@@ -1,11 +1,6 @@
 package main
 
 import (
-	"Memorandum/config"
-	"Memorandum/server/db"
-	httpHandler "Memorandum/server/http"
-	rpcHandler "Memorandum/server/rpc"
-	Logger "Memorandum/utils/logger"
 	"context"
 	"fmt"
 	"net/http"
@@ -14,6 +9,12 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/shafigh75/Memorandum/config"
+	"github.com/shafigh75/Memorandum/server/db"
+	httpHandler "github.com/shafigh75/Memorandum/server/http"
+	rpcHandler "github.com/shafigh75/Memorandum/server/rpc"
+	Logger "github.com/shafigh75/Memorandum/utils/logger"
 )
 
 func printBanner(name string) {

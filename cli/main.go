@@ -1,13 +1,14 @@
 package main
 
 import (
-	"Memorandum/config"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/rpc"
 	"strings"
+
+	"github.com/shafigh75/Memorandum/config"
 
 	"github.com/chzyer/readline"
 	"github.com/spf13/cobra"

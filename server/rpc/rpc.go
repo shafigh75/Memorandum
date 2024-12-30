@@ -1,13 +1,14 @@
 package rpc
 
 import (
-	"Memorandum/server/db"
-	"Memorandum/utils/logger"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/rpc"
 	"time"
+
+	"github.com/shafigh75/Memorandum/server/db"
+	"github.com/shafigh75/Memorandum/utils/logger"
 )
 
 // RPCRequest represents the structure of an RPC request.

@@ -1,7 +1,6 @@
 package db
 
 import (
-	"Memorandum/config" // Adjust the import path as necessary
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
@@ -12,6 +11,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/shafigh75/Memorandum/config" // Adjust the import path as necessary
 )
 
 // ValueWithTTL represents a value with its expiration time.

@@ -1,13 +1,14 @@
 package handler
 
 import (
-	"Memorandum/config"
-	"Memorandum/server/db"
-	"Memorandum/utils/logger"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/shafigh75/Memorandum/config"
+	"github.com/shafigh75/Memorandum/server/db"
+	"github.com/shafigh75/Memorandum/utils/logger"
 )
 
 // APIResponse represents a standard API response.
