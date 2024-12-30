@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"hash/crc32"
 	"hash/fnv"
 	"io"
 	"os"
@@ -26,6 +27,7 @@ type WriteAheadLogEntry struct {
 	Value     string `json:"value"`
 	TTL       int64  `json:"ttl"`
 	Timestamp int64  `json:"timestamp"`
+	Checksum  uint32 `json:"checksum"` // Integrity check using CRC32
 }
 
 // WAL represents the Write-Ahead Log.
@@ -68,6 +70,8 @@ func (wal *WAL) Log(entry WriteAheadLogEntry) error {
 	wal.mu.Lock()
 	defer wal.mu.Unlock()
 
+	// Calculate checksum for the entry
+	entry.Checksum = crc32.ChecksumIEEE([]byte(entry.Key + entry.Value))
 	wal.buffer = append(wal.buffer, entry)
 	if len(wal.buffer) >= wal.bufferSize {
 		return wal.flush()
@@ -278,6 +282,12 @@ func (s *ShardedInMemoryStore) RecoverFromWAL(filename string) error {
 				break // End of file reached, exit the loop gracefully
 			}
 			return err // Return any other error
+		}
+
+		// Validate checksum to ensure entry integrity
+		expectedChecksum := crc32.ChecksumIEEE([]byte(entry.Key + entry.Value))
+		if entry.Checksum != expectedChecksum {
+			return fmt.Errorf("invalid checksum for entry: %v", entry)
 		}
 
 		switch entry.Action {
