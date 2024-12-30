@@ -57,7 +57,8 @@ Memorandum uses a configuration file to set various parameters such as the numbe
   "WAL_bufferSize": 4096,
   "WAL_flushInterval": 30,
   "cleanup_interval": 10,
-  "auth_enabled": false,
+  "auth_enabled": true,
+  "wal_enabled": false,
   "shard_count": 32,
   "auth_token": "f5e0c51b7f3c6e6b57deb13b3017c32e"
 }
@@ -117,7 +118,7 @@ Navigate to the directory containing the `db` package and run:
 go test -bench=.
 ```
 
-### example results of Running benchmarks:
+### example results of Running benchmarks WAL-enabled:
 ```sh
 goos: linux
 goarch: amd64
@@ -130,6 +131,22 @@ PASS
 ok      github.com/shafigh75/Memorandum/server/db       5.010s
 
 ```
+
+### example results of Running benchmarks WAL-disabled:
+```sh
+goos: linux
+goarch: amd64
+pkg: github.com/shafigh75/Memorandum/server/db
+cpu: Intel(R) Xeon(R) Platinum 8280 CPU @ 2.70GHz
+BenchmarkSet-24           868538              1235 ns/op
+BenchmarkGet-24          4332234               282.9 ns/op
+BenchmarkDelete-24       5088898               253.6 ns/op
+PASS
+ok      github.com/shafigh75/Memorandum/server/db       4.256s
+
+```
+**NOTE** : notice the huge write differnce when disabling WAL
+
 
 ## Contributing
 Contributions are welcome! If you have suggestions for improvements or new features, feel free to open an issue or submit a pull request.
