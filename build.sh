@@ -13,10 +13,23 @@ print_banner() {
     echo -e "${GREEN}=========================================${NC}"
 }
 
+# Function to clone the repository
+clone_repository() {
+    echo -e "${YELLOW}Cloning the repository...${NC}"
+    git clone https://github.com/shafigh75/Memorandum.git
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Repository cloned successfully!${NC}"
+        cd Memorandum || { echo -e "${RED}Failed to change directory to 'Memorandum'.${NC}"; exit 1; }
+    else
+        echo -e "${RED}Failed to clone the repository.${NC}"
+        exit 1
+    fi
+}
+
 # Function to build the main project
 build_main() {
     echo -e "${YELLOW}Building the main project...${NC}"
-    go build -o Memorandum ./
+    go build -o Memorandum ./...
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}Main project built successfully as 'Memorandum'!${NC}"
     else
@@ -39,6 +52,7 @@ build_cli() {
 
 # Main script execution
 print_banner
+clone_repository
 build_main
 build_cli
 
