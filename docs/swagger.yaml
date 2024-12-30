@@ -1,0 +1,104 @@
+openapi: 3.0.0
+info:
+  title: Memorandum API
+  description: API documentation for the Memorandum key-value store.
+  version: 1.0.0
+servers:
+  - url: http://localhost:6060
+    description: Local server for testing
+
+paths:
+  /set:
+    post:
+      summary: Set a key-value pair in the store
+      operationId: setKeyValue
+      requestBody:
+        description: Key-value pair and TTL
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                key:
+                  type: string
+                  description: The key to store.
+                  example: myKey
+                value:
+                  type: string
+                  description: The value to store.
+                  example: myValue
+                ttl:
+                  type: integer
+                  description: Time-to-live in seconds.
+                  example: 60
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+
+
+  /get:
+    get:
+      summary: Get the value for a given key
+      operationId: getKeyValue
+      parameters:
+        - name: key
+          in: query
+          required: true
+          schema:
+            type: string
+            description: The key to retrieve.
+            example: myKey
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+
+
+  /delete:
+    delete:
+      summary: Delete a key from the store
+      operationId: deleteKeyValue
+      parameters:
+        - name: key
+          in: query
+          required: true
+          schema:
+            type: string
+            description: The key to delete.
+            example: myKey
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIResponse'
+
+
+components:
+  schemas:
+    APIResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates if the operation was successful.
+          example: true
+        data:
+          type: object
+          description: The data returned by the operation (if any).
+          nullable: true
+          example: myValue
+        error:
+          type: string
+          description: The error message (if any).
+          nullable: true
+          example: Key not found or expired
