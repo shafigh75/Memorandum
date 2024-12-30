@@ -106,6 +106,31 @@ func main() {
 }
 ```
 
+## Benchmarks
+
+To measure the performance of the key operations, you can run the benchmark tests. These tests provide insights into the time taken for `Set`, `Get`, and `Delete` operations. 
+
+### Running Benchmarks 
+Navigate to the directory containing the `db` package and run: 
+
+```sh
+go test -bench=.
+```
+
+### example results of Running benchmarks:
+```sh
+goos: linux
+goarch: amd64
+pkg: github.com/shafigh75/Memorandum/server/db
+cpu: Intel(R) Xeon(R) Platinum 8280 CPU @ 2.70GHz
+BenchmarkSet-24           357301              2919 ns/op
+BenchmarkGet-24          4718535               273.0 ns/op
+BenchmarkDelete-24        557890              1911 ns/op
+PASS
+ok      github.com/shafigh75/Memorandum/server/db       5.010s
+
+```
+
 ## Contributing
 Contributions are welcome! If you have suggestions for improvements or new features, feel free to open an issue or submit a pull request.
 
