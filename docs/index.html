@@ -12,6 +12,9 @@
             padding: 0;
             background-color: #f4f4f4;
             color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh; /* Ensure the body takes at least the full height of the viewport */
         }
         header {
             background: #007bff;
@@ -28,6 +31,7 @@
             margin-top: 20px;
         }
         .container {
+            flex: 1; /* Allow the container to grow and fill the available space */
             max-width: 800px;
             margin: 20px auto;
             background: white;
@@ -56,8 +60,6 @@
             padding: 20px;
             background: #007bff;
             color: white;
-            position: relative;
-            bottom: 0;
             width: 100%;
         }
         .social-icons {
@@ -96,7 +98,7 @@
         <p>&copy; 2023 Memorandum API. All rights reserved.</p>
         <div class="social-icons">
             <a href="https://github.com/shafigh75" target="_blank"><i class="fab fa-github"></i> GitHub</a>
-            <a href="https://geek4geeks.ir" target="_blank"><i class="fas fa-globe"></i>My Personal Website</a>
+            <a href="https://geek4geeks.ir" target="_blank"><i class="fas fa-globe"></i> My Personal Website</a>
             <a href="https://www.linkedin.com/in/mohammad-shafighi" target="_blank"><i class="fab fa-linkedin"></i> LinkedIn</a>
         </div>
     </footer>
