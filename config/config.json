@@ -8,6 +8,7 @@
   "WAL_flushInterval": 30,
   "cleanup_interval": 10,
   "auth_enabled": true,
+  "wal_enabled": false,
   "shard_count": 32,
   "auth_token": "f5e0c51b7f3c6e6b57deb13b3017c32e"
 }

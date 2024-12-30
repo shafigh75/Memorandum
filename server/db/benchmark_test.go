@@ -3,15 +3,13 @@ package db
 import (
 	"fmt"
 	"testing"
-	"time"
 )
 
 func setupBenchmarkStore() *ShardedInMemoryStore {
-	wal, err := NewWAL("benchmark_wal.log", 100, 10*time.Second)
+	store, err := LoadConfigAndCreateStore("../../config/config.json")
 	if err != nil {
-		panic(err)
+		panic("ERROR starting the benchmark" + err.Error())
 	}
-	store := NewShardedInMemoryStore(16, wal)
 	return store
 }
 

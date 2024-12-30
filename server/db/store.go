@@ -64,6 +64,12 @@ func NewWAL(filename string, bufferSize int, flushInterval time.Duration) (*WAL,
 	return wal, nil
 }
 
+// DummyWAL is a no-op WAL implementation.
+type DummyWAL struct{}
+
+func (d *DummyWAL) Log(entry WriteAheadLogEntry) error { return nil }
+func (d *DummyWAL) Close() error                       { return nil }
+
 var isWalRecovery bool
 
 // Log writes a log entry to the WAL.
@@ -138,15 +144,20 @@ type mapShard struct {
 	store map[string]ValueWithTTL
 }
 
+type WALInterface interface {
+	Log(WriteAheadLogEntry) error
+	Close() error
+}
+
 // ShardedInMemoryStore represents a sharded in-memory key-value store with TTL.
 type ShardedInMemoryStore struct {
 	shards    []*mapShard
 	numShards int
-	wal       *WAL
+	wal       WALInterface
 }
 
 // NewShardedInMemoryStore creates a new instance of ShardedInMemoryStore.
-func NewShardedInMemoryStore(numShards int, wal *WAL) *ShardedInMemoryStore {
+func NewShardedInMemoryStore(numShards int, wal WALInterface) *ShardedInMemoryStore {
 	shards := make([]*mapShard, numShards)
 	for i := 0; i < numShards; i++ {
 		shards[i] = &mapShard{
@@ -312,27 +323,28 @@ func (s *ShardedInMemoryStore) RecoverFromWAL(filename string) error {
 	return nil
 }
 
-// LoadConfigAndCreateStore loads the configuration and creates a new sharded store.
 func LoadConfigAndCreateStore(configPath string) (*ShardedInMemoryStore, error) {
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		return nil, err
 	}
 
-	walPath := cfg.WalPath
-	bufferSize := cfg.WalBufferSize                                    // Assuming you have this in your config
-	flushInterval := time.Duration(cfg.WalFlushInterval) * time.Second // Assuming you have this in your config
-
-	wal, err := NewWAL(walPath, bufferSize, flushInterval)
-	if err != nil {
-		return nil, err
+	var wal WALInterface
+	if cfg.WalEnabled {
+		wal, err = NewWAL(cfg.WalPath, cfg.WalBufferSize, time.Duration(cfg.WalFlushInterval)*time.Second)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		wal = &DummyWAL{}
 	}
 
 	store := NewShardedInMemoryStore(cfg.NumShards, wal)
 
-	// Recover the state from WAL
-	if err := store.RecoverFromWAL(walPath); err != nil {
-		return nil, err
+	if cfg.WalEnabled {
+		if err := store.RecoverFromWAL(cfg.WalPath); err != nil {
+			return nil, err
+		}
 	}
 
 	return store, nil
