@@ -54,7 +54,8 @@ Memorandum uses a configuration file to set various parameters such as the numbe
   "auth_enabled": false,
   "shard_count": 32,
   "auth_token": "f5e0c51b7f3c6e6b57deb13b3017c32e"
-}```
+}
+```
 
 ### Example Code
 Here is an example of how to use the Memorandum library in your Go project:
@@ -64,7 +65,7 @@ package main
 
 import (
     "fmt"
-    "Memorandum/db"
+    "github.com/shafigh75/Memorandum/server/db"
     "time"
 )
 
