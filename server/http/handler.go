@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"Memorandum/config"
 	"Memorandum/server/db"
 	"Memorandum/utils/logger"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -28,6 +30,39 @@ func NewHandler(store *db.ShardedInMemoryStore, logger *logger.Logger) *Handler 
 
 // ServeHTTP implements the http.Handler interface.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	configFilePath := "config/config.json"
+	cfg, err := config.LoadConfig(configFilePath)
+	if err != nil {
+		fmt.Println("Error loading config:", err)
+		return
+	}
+	if cfg.AuthEnabled {
+		// Create a structured log message
+		logMessage := map[string]interface{}{
+			"timestamp": time.Now().Format(time.RFC3339),
+			"method":    r.Method + ": UNAUTHORIZED",
+			"url":       r.URL.String(),
+			"ip":        r.RemoteAddr,
+		}
+
+		// Convert the log message to JSON
+		logJSON, err := json.Marshal(logMessage)
+		if err != nil {
+			// Handle JSON marshaling error (optional)
+			h.Logger.Log("Error marshaling log message to JSON")
+			return
+		}
+
+		// Log the structured message as a JSON string
+		h.Logger.Log(string(logJSON))
+		// Check for authentication if enabled
+		authHeader := r.Header.Get("Authorization")
+		if authHeader != "Bearer "+cfg.AuthToken {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+	}
+
 	// Create a structured log message
 	logMessage := map[string]interface{}{
 		"timestamp": time.Now().Format(time.RFC3339),

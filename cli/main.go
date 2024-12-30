@@ -43,6 +43,16 @@ var rootCmd = &cobra.Command{
 }
 
 func startREPL() {
+	// check if auth is enabled
+	configFilePath := "config/config.json"
+	cfg, err := config.LoadConfig(configFilePath)
+	if err != nil {
+		fmt.Println("Error loading config:", err)
+		return
+	}
+	if !cfg.AuthEnabled {
+		isAuthenticated = true
+	}
 	// Define completer
 	completer := readline.NewPrefixCompleter(
 		readline.PcItem("help"),
