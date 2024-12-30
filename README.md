@@ -21,11 +21,13 @@ The recent shift towards more restrictive licensing models in some popular datab
 - **interfaces**: Implemented as a command-line interface and a network server with two http and RPC interfaces so far.
 
 ## Installation
-To get started with Memorandum, clone the repository and build the project:
+To get started with Memorandum, clone the repository and build the project using the simple script:
 
 ```sh
 curl -sSL https://raw.githubusercontent.com/shafigh75/Memorandum/main/build.sh | bash
 ```
+### NOTE:
+make sure golang is installed on your server or else the build script will not work for you.
 
 ## Usage
 ### Running the Server
