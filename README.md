@@ -66,6 +66,12 @@ Memorandum uses a configuration file to set various parameters such as the numbe
 ### Example Code
 Here is an example of how to use the Memorandum library in your Go project:
 
+get the package:
+```sh
+  go get github.com/shafigh75/Memorandum
+```
+
+use in your project:
 ```go
 package main
 
