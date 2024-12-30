@@ -11,8 +11,8 @@ import (
 
 const (
 	baseURL       = "http://localhost:6060"
-  numKeys       = 50000 // Number of keys to set
-  numGoroutines = 100  // Number of concurrent goroutines
+	numKeys       = 50000 // Number of keys to set
+	numGoroutines = 100   // Number of concurrent goroutines
 )
 
 func setKey(key int, wg *sync.WaitGroup) {
