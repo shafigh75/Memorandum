@@ -24,9 +24,7 @@ The recent shift towards more restrictive licensing models in some popular datab
 To get started with Memorandum, clone the repository and build the project:
 
 ```sh
-git clone https://github.com/shafigh75/Memorandum.git
-cd Memorandum
-go build
+curl -sSL https://raw.githubusercontent.com/shafigh75/Memorandum/main/build.sh | bash
 ```
 
 ## Usage
@@ -35,6 +33,12 @@ To start the Memorandum server, run the following command:
 
 ```sh
 ./Memorandum
+```
+
+### Running the cli
+use this command to start the CLI:
+```sh
+./Memorandum-cli
 ```
 
 ### Configuration
