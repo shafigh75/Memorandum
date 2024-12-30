@@ -19,7 +19,6 @@ clone_repository() {
     git clone https://github.com/shafigh75/Memorandum.git
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}Repository cloned successfully!${NC}"
-        cd Memorandum || { echo -e "${RED}Failed to change directory to 'Memorandum'.${NC}"; exit 1; }
     else
         echo -e "${RED}Failed to clone the repository.${NC}"
         exit 1
@@ -29,6 +28,7 @@ clone_repository() {
 # Function to build the main project
 build_main() {
     echo -e "${YELLOW}Building the main project...${NC}"
+    cd Memorandum || { echo -e "${RED}Failed to change directory to 'Memorandum'.${NC}"; exit 1; }
     go build -o Memorandum ./...
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}Main project built successfully as 'Memorandum'!${NC}"
@@ -41,6 +41,7 @@ build_main() {
 # Function to build the CLI
 build_cli() {
     echo -e "${YELLOW}Building the CLI...${NC}"
+    cd Memorandum || { echo -e "${RED}Failed to change directory to 'Memorandum'.${NC}"; exit 1; }
     go build -o Memorandum-cli ./cli
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}CLI built successfully as 'Memorandum-cli'!${NC}"
