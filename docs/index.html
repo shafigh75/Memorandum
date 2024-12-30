@@ -3,21 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Documentation</title>
+    <title>Memorandum API Documentation</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.52.5/swagger-ui.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.52.5/swagger-ui-bundle.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.52.5/swagger-ui-standalone-preset.js"></script>
     <style>
-        html { box-sizing: border-box; }
-        *, *:before, *:after { box-sizing: inherit; }
-        body { margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        header {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+        }
+        h2 {
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        #swagger-ui {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <div id="swagger-ui"></div>
+    <header>
+        <h1>Memorandum API Documentation</h1>
+    </header>
+    <div class="container">
+        <h2>Welcome to the Memorandum API</h2>
+        <p>The Memorandum API allows you to manage key-value pairs with optional authentication. This documentation provides an overview of the available endpoints and how to use them.</p>
+        
+        <h2>API Endpoints</h2>
+        <ul>
+            <li><strong>GET /get</strong> - Retrieve a value by key</li>
+            <li><strong>POST /set</strong> - Set a value for a key</li>
+            <li><strong>DELETE /delete</strong> - Delete a value by key</li>
+        </ul>
+
+        <h2>Swagger UI</h2>
+        <div id="swagger-ui"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.52.5/swagger-ui-bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.52.5/swagger-ui-standalone-preset.js"></script>
     <script>
         const ui = SwaggerUIBundle({
-            url: "swagger.yaml", // Update this to the path of your swagger.yaml
+            url: "swagger.yaml", // Ensure this path is correct relative to your HTML file
             dom_id: '#swagger-ui',
             presets: [
                 SwaggerUIBundle.presets.apis,
