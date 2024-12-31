@@ -7,31 +7,36 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
             background-color: #f4f4f4;
             color: #333;
             display: flex;
             flex-direction: column;
-            min-height: 100vh; /* Ensure the body takes at least the full height of the viewport */
+            min-height: 100vh;
         }
+
         header {
             background: #007bff;
             color: white;
-            padding: 20px;
+            padding: 40px 20px;
             text-align: center;
         }
+
         h1 {
             margin: 0;
             font-size: 2.5em;
         }
+
         h2 {
             color: #007bff;
             margin-top: 20px;
+            font-size: 1.8em;
         }
+
         .container {
-            flex: 1; /* Allow the container to grow and fill the available space */
+            flex: 1;
             max-width: 800px;
             margin: 20px auto;
             background: white;
@@ -39,9 +44,11 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
         p {
             line-height: 1.6;
         }
+
         .button {
             display: inline-block;
             padding: 10px 20px;
@@ -52,33 +59,12 @@
             border-radius: 5px;
             transition: background 0.3s;
         }
+
         .button:hover {
             background: #0056b3;
         }
-        footer {
-            text-align: center;
-            padding: 20px;
-            background: #007bff;
-            color: white;
-            width: 100%;
-        }
-        .social-icons {
-            margin-top: 10px;
-        }
-        .social-icons a {
-            color: white;
-            margin: 0 10px;
-            text-decoration: none;
-        }
+
         .button-flick {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: background-color 0.3s;
             animation: flicker 1s infinite;
         }
 
@@ -88,27 +74,27 @@
             100% { opacity: 1; }
         }
 
-        .button-flick:hover {
-            background-color: #0056b3;
-        }
-        
-                body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f9f9f9;
-        }
-
-        header {
+        footer {
             text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .title {
+            padding: 20px;
+            background: #007bff;
             color: white;
+            width: 100%;
         }
 
-        .subtitle {
-            color: lightcyan;
+        .social-icons {
+            margin-top: 10px;
+        }
+
+        .social-icons a {
+            color: white;
+            margin: 0 10px;
+            text-decoration: none;
+            font-size: 18px;
+        }
+
+        .social-icons a:hover {
+            text-decoration: underline;
         }
 
         .breaker {
@@ -122,33 +108,32 @@
 </head>
 <body>
     <header>
-        <h1 class="title">Welcome to Memorandum</h1>
-        <p class="subtitle">Your go-to solution for managing key-value pairs.</p>
+        <h1>Welcome to Memorandum</h1>
+        <p>Your go-to solution for managing key-value pairs.</p>
         <hr class="breaker">
-        <p class="subtitle">developed by: Mohammad Shafighi</p>
+        <p>Developed by: Mohammad Shafighi</p>
     </header>
     <div class="container">
         <h2>About the Project</h2>
-        <p>The Memorandum provides a simple and efficient way to store and retrieve key-value pairs. It is designed for developers who need a lightweight solution for data storage with optional authentication.
-        <br>It is written in golang and provides multiple interfaces to work with including HTTP, RPC, CLI and golang-module.</p>
+        <p>The Memorandum provides a simple and efficient way to store and retrieve key-value pairs. It is designed for developers who need a lightweight solution for data storage with optional authentication. It is written in Go and provides multiple interfaces to work with, including HTTP, RPC, CLI, and Go module.</p>
         
         <h2>Features</h2>
         <ul>
             <li>Store and retrieve data efficiently</li>
             <li>Optional authentication for secure access</li>
             <li>Easy to integrate with your applications</li>
-            <li>modular configuration</li>
-            <li>persistence support using Write ahead Loggging</li>
+            <li>Modular configuration</li>
+            <li>Persistence support using Write Ahead Logging</li>
         </ul>
 
         <h2>Getting Started</h2>
         <p>To get started with the Memorandum API, check out the documentation and examples below:</p>
-        <a href="https://github.com/shafigh75/Memorandum" class="button-flick">View Documentation</a>
+        <a href="https://github.com/shafigh75/Memorandum" class="button button-flick">View Documentation</a>
         <a href="https://github.com/shafigh75/Memorandum/issues" class="button">Report an Issue</a>
     </div>
 
     <footer>
-        <p>&copy; 2024 Memorandum. no rights reserved (since I value FOSS).</p>
+        <p>&copy; 2024 Memorandum. No rights reserved (since I value FOSS).</p>
         <div class="social-icons">
             <a href="https://github.com/shafigh75" target="_blank"><i class="fab fa-github"></i> GitHub</a>
             <a href="https://geek4geeks.ir" target="_blank"><i class="fas fa-globe"></i> My Personal Website</a>
@@ -157,3 +142,4 @@
     </footer>
 </body>
 </html>
+
