@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memorandum API Documentation</title>
+    <title>Memorandum Documentation</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         body {
@@ -70,32 +70,85 @@
             margin: 0 10px;
             text-decoration: none;
         }
+        .button-flick {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            animation: flicker 1s infinite;
+        }
+
+        @keyframes flicker {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .button-flick:hover {
+            background-color: #0056b3;
+        }
+        
+                body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #666;
+        }
+
+        hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, #007BFF, #00CFFF);
+            margin: 20px 0;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Welcome to Memorandum API</h1>
+        <h1>Welcome to Memorandum</h1>
         <p>Your go-to solution for managing key-value pairs.</p>
+        <hr>
+        <p>developed by: Mohammad Shafighi</p>
     </header>
     <div class="container">
         <h2>About the Project</h2>
-        <p>The Memorandum API provides a simple and efficient way to store and retrieve key-value pairs. It is designed for developers who need a lightweight solution for data storage with optional authentication.</p>
+        <p>The Memorandum provides a simple and efficient way to store and retrieve key-value pairs. It is designed for developers who need a lightweight solution for data storage with optional authentication.
+        <br>It is written in golang and provides multiple interfaces to work with including HTTP, RPC, CLI and golang-module.</p>
         
         <h2>Features</h2>
         <ul>
             <li>Store and retrieve data efficiently</li>
             <li>Optional authentication for secure access</li>
             <li>Easy to integrate with your applications</li>
+            <li>modular configuration</li>
+            <li>persistence support using Write ahead Loggging</li>
         </ul>
 
         <h2>Getting Started</h2>
         <p>To get started with the Memorandum API, check out the documentation and examples below:</p>
-        <a href="https://github.com/shafigh75/Memorandum" class="button">View Documentation</a>
+        <a href="https://github.com/shafigh75/Memorandum" class="button-flick">View Documentation</a>
         <a href="https://github.com/shafigh75/Memorandum/issues" class="button">Report an Issue</a>
     </div>
 
     <footer>
-        <p>&copy; 2023 Memorandum API. All rights reserved.</p>
+        <p>&copy; 2024 Memorandum. no rights reserved (since I value FOSS).</p>
         <div class="social-icons">
             <a href="https://github.com/shafigh75" target="_blank"><i class="fab fa-github"></i> GitHub</a>
             <a href="https://geek4geeks.ir" target="_blank"><i class="fas fa-globe"></i> My Personal Website</a>
