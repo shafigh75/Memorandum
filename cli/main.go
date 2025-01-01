@@ -34,11 +34,11 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "mycli",
-	Short: "My CLI application",
-	Long:  `This is a sample CLI application using Cobra with autocompletion and REPL.`,
+	Use:   "Memorandom-cli",
+	Short: "Memorandum command line interface",
+	Long:  `This is a CLI application for Memorandum project. developed by: Mohammad Shafighi`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Welcome to My CLI! Type 'help' for available commands.")
+		fmt.Println("Welcome to Memorandum CLI! Type 'help' for available commands.")
 		startREPL()
 	},
 }
@@ -118,14 +118,19 @@ func handleCommand(input string) {
 	case "passwd":
 		generatePassword()
 	case "set":
-		if len(args) < 4 {
-			fmt.Println("Usage: set [key] [value] [ttl]")
+		if len(args) < 3 {
+			fmt.Println("Usage: set [key] [value] [ttl-optional]")
 			return
 		}
 		key := args[1]
 		ttl := int64(0)
 		if _, err := fmt.Sscanf(args[len(args)-1], "%d", &ttl); err != nil {
-			fmt.Println("Invalid TTL value.")
+			ttl = int64(0)
+			args = append(args," ")
+		} else if len(args) == 3 {
+			ttl = int64(0)
+			value := args[2]
+			setKey(key, value, ttl)
 			return
 		}
 		value := strings.Join(args[2:len(args)-1], " ")
