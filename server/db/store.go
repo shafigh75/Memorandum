@@ -274,7 +274,6 @@ func (s *ShardedInMemoryStore) StartCleanupRoutine(interval time.Duration) {
 }
 
 // RecoverFromWAL replays the WAL to restore the state of the store.
-// RecoverFromWAL replays the WAL to restore the state of the store.
 func (s *ShardedInMemoryStore) RecoverFromWAL(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
