@@ -63,6 +63,7 @@ Memorandum uses a configuration file to set various parameters such as the numbe
   "auth_token": "f5e0c51b7f3c6e6b57deb13b3017c32e"
 }
 ```
+**NOTE**: make sure to check the config file and set the values based on your requirements. 
 
 ### Example Code
 Here is an example of how to use the Memorandum library in your Go project:
