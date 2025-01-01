@@ -1,6 +1,6 @@
 module cli
 
-go 1.23.1
+go 1.23
 
 require (
 	github.com/chzyer/readline v1.5.1
