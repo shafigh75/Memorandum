@@ -184,7 +184,12 @@ func (s *ShardedInMemoryStore) Set(key, value string, ttl int64) {
 	shard := s.getShard(key)
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
-	expiration := time.Now().Add(time.Duration(ttl) * time.Second).Unix()
+	var expiration int64 
+	if ttl == 0 {
+		expiration = 0
+	} else {
+		expiration = time.Now().Add(time.Duration(ttl) * time.Second).Unix()
+	}
 	shard.store[key] = ValueWithTTL{Value: value, Expiration: expiration}
 
 	// Log the operation
@@ -306,14 +311,14 @@ func (s *ShardedInMemoryStore) RecoverFromWAL(filename string) error {
 		case "set":
 			expiredAt := time.Unix(entry.Timestamp, 0).Add(time.Duration(entry.TTL) * time.Second).Unix()
 			nowDate := time.Now().Unix()
-			if nowDate > expiredAt {
+			if entry.TTL != 0 && nowDate > expiredAt {
 				break
 			}
 			s.Set(entry.Key, entry.Value, entry.TTL)
 		case "delete":
 			expiredAt := time.Unix(entry.Timestamp, 0).Add(time.Duration(entry.TTL) * time.Second).Unix()
 			nowDate := time.Now().Unix()
-			if nowDate > expiredAt {
+			if entry.TTL != 0 && nowDate > expiredAt {
 				break
 			}
 			s.Delete(entry.Key)
