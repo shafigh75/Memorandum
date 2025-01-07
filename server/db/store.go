@@ -2,9 +2,11 @@ package db
 
 import (
 	"bytes"
-	"encoding/binary"
+	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"hash/crc32"
+	"hash/fnv"
 	"io"
 	"os"
 	"sync"
@@ -19,14 +21,14 @@ type ValueWithTTL struct {
 	Expiration int64 // Unix timestamp in seconds
 }
 
-// WriteAheadLogEntry represents a binary log entry for WAL.
+// WriteAheadLogEntry represents a log entry for WAL.
 type WriteAheadLogEntry struct {
-	Action    string
-	Key       string
-	Value     string
-	TTL       int64
-	Timestamp int64
-	Checksum  uint32 // Integrity check using CRC32
+	Action    string `json:"action"`
+	Key       string `json:"key"`
+	Value     string `json:"value"`
+	TTL       int64  `json:"ttl"`
+	Timestamp int64  `json:"timestamp"`
+	Checksum  uint32 `json:"checksum"` // Integrity check using CRC32
 }
 
 // WAL represents the Write-Ahead Log.
@@ -37,6 +39,7 @@ type WAL struct {
 	bufferSize  int
 	flushTicker *time.Ticker
 	flushDone   chan struct{}
+	gzipWriter  *gzip.Writer
 }
 
 // NewWAL creates a new WAL instance.
@@ -46,12 +49,15 @@ func NewWAL(filename string, bufferSize int, flushInterval time.Duration) (*WAL,
 		return nil, err
 	}
 
+	gzipWriter := gzip.NewWriter(file)
+
 	wal := &WAL{
 		file:        file,
 		buffer:      make([]WriteAheadLogEntry, 0, bufferSize),
 		bufferSize:  bufferSize,
 		flushTicker: time.NewTicker(flushInterval),
 		flushDone:   make(chan struct{}),
+		gzipWriter:  gzipWriter,
 	}
 
 	go wal.startFlushRoutine()
@@ -80,21 +86,22 @@ func (wal *WAL) Log(entry WriteAheadLogEntry) error {
 	return nil
 }
 
-// flush writes the buffered log entries to the WAL file in binary format.
+// flush writes the buffered log entries to the WAL file.
 func (wal *WAL) flush() error {
 	if len(wal.buffer) == 0 {
 		return nil
 	}
 
 	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
 	for _, entry := range wal.buffer {
-		if err := encodeEntry(&buf, entry); err != nil {
+		if err := encoder.Encode(entry); err != nil {
 			return err
 		}
 	}
 
-	// Write binary data to the WAL file
-	if _, err := wal.file.Write(buf.Bytes()); err != nil {
+	// Write the compressed data to the gzip writer
+	if _, err := wal.gzipWriter.Write(buf.Bytes()); err != nil {
 		return err
 	}
 
@@ -125,93 +132,10 @@ func (wal *WAL) Close() error {
 	if err := wal.flush(); err != nil {
 		return err
 	}
+	if err := wal.gzipWriter.Close(); err != nil {
+		return err
+	}
 	return wal.file.Close()
-}
-
-// encodeEntry encodes a WriteAheadLogEntry into binary format.
-func encodeEntry(buf *bytes.Buffer, entry WriteAheadLogEntry) error {
-	if err := binary.Write(buf, binary.LittleEndian, int32(len(entry.Action))); err != nil {
-		return err
-	}
-	if _, err := buf.WriteString(entry.Action); err != nil {
-		return err
-	}
-	if err := binary.Write(buf, binary.LittleEndian, int32(len(entry.Key))); err != nil {
-		return err
-	}
-	if _, err := buf.WriteString(entry.Key); err != nil {
-		return err
-	}
-	if err := binary.Write(buf, binary.LittleEndian, int32(len(entry.Value))); err != nil {
-		return err
-	}
-	if _, err := buf.WriteString(entry.Value); err != nil {
-		return err
-	}
-	if err := binary.Write(buf, binary.LittleEndian, entry.TTL); err != nil {
-		return err
-	}
-	if err := binary.Write(buf, binary.LittleEndian, entry.Timestamp); err != nil {
-		return err
-	}
-	return binary.Write(buf, binary.LittleEndian, entry.Checksum)
-}
-
-// decodeEntry decodes a binary WAL entry from the given reader.
-func decodeEntry(r io.Reader) (WriteAheadLogEntry, error) {
-	var entry WriteAheadLogEntry
-
-	var actionLen, keyLen, valueLen int32
-	if err := binary.Read(r, binary.LittleEndian, &actionLen); err != nil {
-		return entry, err
-	}
-
-	action := make([]byte, actionLen)
-	if _, err := io.ReadFull(r, action); err != nil {
-		return entry, err
-	}
-	entry.Action = string(action)
-
-	if err := binary.Read(r, binary.LittleEndian, &keyLen); err != nil {
-		return entry, err
-	}
-
-	key := make([]byte, keyLen)
-	if _, err := io.ReadFull(r, key); err != nil {
-		return entry, err
-	}
-	entry.Key = string(key)
-
-	if err := binary.Read(r, binary.LittleEndian, &valueLen); err != nil {
-		return entry, err
-	}
-
-	value := make([]byte, valueLen)
-	if _, err := io.ReadFull(r, value); err != nil {
-		return entry, err
-	}
-	entry.Value = string(value)
-
-	if err := binary.Read(r, binary.LittleEndian, &entry.TTL); err != nil {
-		return entry, err
-	}
-
-	if err := binary.Read(r, binary.LittleEndian, &entry.Timestamp); err != nil {
-		return entry, err
-	}
-
-	if err := binary.Read(r, binary.LittleEndian, &entry.Checksum); err != nil {
-		return entry, err
-	}
-
-	return entry, nil
-}
-
-// ShardedInMemoryStore represents a sharded in-memory key-value store with TTL.
-type ShardedInMemoryStore struct {
-	shards    []*mapShard
-	numShards int
-	wal       WALInterface
 }
 
 // mapShard represents a single shard of the in-memory store.
@@ -223,6 +147,13 @@ type mapShard struct {
 type WALInterface interface {
 	Log(WriteAheadLogEntry) error
 	Close() error
+}
+
+// ShardedInMemoryStore represents a sharded in-memory key-value store with TTL.
+type ShardedInMemoryStore struct {
+	shards    []*mapShard
+	numShards int
+	wal       WALInterface
 }
 
 // NewShardedInMemoryStore creates a new instance of ShardedInMemoryStore.
@@ -242,8 +173,10 @@ func NewShardedInMemoryStore(numShards int, wal WALInterface) *ShardedInMemorySt
 
 // getShard returns the shard for a given key.
 func (s *ShardedInMemoryStore) getShard(key string) *mapShard {
-	hash := crc32.ChecksumIEEE([]byte(key))
-	return s.shards[int(hash)%s.numShards]
+	hash := fnv.New32a()
+	hash.Write([]byte(key))
+	shardIndex := int(hash.Sum32()) % s.numShards
+	return s.shards[shardIndex]
 }
 
 // Set adds a key-value pair to the store with an optional TTL.
@@ -251,7 +184,7 @@ func (s *ShardedInMemoryStore) Set(key, value string, ttl int64) {
 	shard := s.getShard(key)
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
-	var expiration int64
+	var expiration int64 
 	if ttl == 0 {
 		expiration = 0
 	} else {
@@ -269,6 +202,7 @@ func (s *ShardedInMemoryStore) Set(key, value string, ttl int64) {
 	}
 	if !isWalRecovery {
 		if err := s.wal.Log(entry); err != nil {
+			// Handle logging error (e.g., log it)
 			fmt.Println("Error writing to WAL: ", err.Error())
 		}
 	}
@@ -279,14 +213,16 @@ func (s *ShardedInMemoryStore) Get(key string) (string, bool) {
 	shard := s.getShard(key)
 	shard.mu.RLock()
 	valueWithTTL, exists := shard.store[key]
-	shard.mu.RUnlock()
+	shard.mu.RUnlock() // Unlock before potentially deleting
 
 	if !exists || (valueWithTTL.Expiration > 0 && time.Now().Unix() > valueWithTTL.Expiration) {
+		// If the key does not exist or has expired, attempt to delete it
 		if exists {
-			s.Delete(key)
+			s.Delete(key) // Delete the expired key
 		}
 		return "", false
 	}
+
 	return valueWithTTL.Value, true
 }
 
@@ -305,6 +241,7 @@ func (s *ShardedInMemoryStore) Delete(key string) {
 	}
 	if !isWalRecovery {
 		if err := s.wal.Log(entry); err != nil {
+			// Handle logging error (e.g., log it)
 			fmt.Println("Error writing to WAL: ", err.Error())
 		}
 	}
@@ -331,7 +268,7 @@ func (s *ShardedInMemoryStore) StartCleanupRoutine(interval time.Duration) {
 		defer ticker.Stop()
 		for {
 			<-ticker.C
-			s.Cleanup()
+			s.Cleanup() // Perform cleanup at regular intervals
 		}
 	}()
 }
@@ -344,10 +281,19 @@ func (s *ShardedInMemoryStore) RecoverFromWAL(filename string) error {
 	}
 	defer file.Close()
 
+	gzipReader, err := gzip.NewReader(file)
+	if err != nil && err.Error() != "EOF" {
+		return err
+	} else if err != nil && err.Error() == "EOF" {
+		return nil
+	}
+	defer gzipReader.Close()
+
+	decoder := json.NewDecoder(gzipReader)
 	isWalRecovery = true
 	for {
-		entry, err := decodeEntry(file)
-		if err != nil {
+		var entry WriteAheadLogEntry
+		if err := decoder.Decode(&entry); err != nil {
 			if err == io.EOF {
 				break // End of file reached, exit the loop gracefully
 			}
@@ -362,8 +308,18 @@ func (s *ShardedInMemoryStore) RecoverFromWAL(filename string) error {
 
 		switch entry.Action {
 		case "set":
+			expiredAt := time.Unix(entry.Timestamp, 0).Add(time.Duration(entry.TTL) * time.Second).Unix()
+			nowDate := time.Now().Unix()
+			if entry.TTL != 0 && nowDate > expiredAt {
+				break
+			}
 			s.Set(entry.Key, entry.Value, entry.TTL)
 		case "delete":
+			expiredAt := time.Unix(entry.Timestamp, 0).Add(time.Duration(entry.TTL) * time.Second).Unix()
+			nowDate := time.Now().Unix()
+			if entry.TTL != 0 && nowDate > expiredAt {
+				break
+			}
 			s.Delete(entry.Key)
 		}
 	}
@@ -371,7 +327,6 @@ func (s *ShardedInMemoryStore) RecoverFromWAL(filename string) error {
 	return nil
 }
 
-// LoadConfigAndCreateStore loads the config file and initializes the store.
 func LoadConfigAndCreateStore(configPath string) (*ShardedInMemoryStore, error) {
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
