@@ -2,6 +2,7 @@ package db
 
 import (
 	"bytes"
+	"container/heap"
 	"encoding/binary"
 	"fmt"
 	"hash/crc32"
@@ -218,6 +219,7 @@ type ShardedInMemoryStore struct {
 type mapShard struct {
 	mu    sync.RWMutex
 	store map[string]ValueWithTTL
+	heap  MinHeap
 }
 
 type WALInterface interface {
@@ -231,7 +233,9 @@ func NewShardedInMemoryStore(numShards int, wal WALInterface) *ShardedInMemorySt
 	for i := 0; i < numShards; i++ {
 		shards[i] = &mapShard{
 			store: make(map[string]ValueWithTTL),
+			heap:  make(MinHeap, 0),
 		}
+		heap.Init(&shards[i].heap)
 	}
 	return &ShardedInMemoryStore{
 		shards:    shards,
@@ -251,6 +255,13 @@ func (s *ShardedInMemoryStore) Set(key, value string, ttl int64) {
 	shard := s.getShard(key)
 	shard.mu.Lock()
 	defer shard.mu.Unlock()
+	_, exists := shard.store[key]
+
+	// delete the key from heap
+	if exists {
+		shard.heap.RemoveByKey(key)
+	}
+
 	var expiration int64
 	if ttl == 0 {
 		expiration = 0
@@ -259,6 +270,8 @@ func (s *ShardedInMemoryStore) Set(key, value string, ttl int64) {
 	}
 	shard.store[key] = ValueWithTTL{Value: value, Expiration: expiration}
 
+	// Update the min-heap
+	heap.Push(&shard.heap, heapEntry{key: key, valueWithTTL: shard.store[key]})
 	// Log the operation
 	entry := WriteAheadLogEntry{
 		Action:    "set",
@@ -297,6 +310,7 @@ func (s *ShardedInMemoryStore) Delete(key string) {
 	defer shard.mu.Unlock()
 	delete(shard.store, key)
 
+	shard.heap.RemoveByKey(key)
 	// Log the delete operation
 	entry := WriteAheadLogEntry{
 		Action:    "delete",
@@ -310,14 +324,23 @@ func (s *ShardedInMemoryStore) Delete(key string) {
 	}
 }
 
-// Cleanup removes expired keys from the store concurrently.
+// Cleanup removes expired keys from the store using the min-heap.
 func (s *ShardedInMemoryStore) Cleanup() {
 	for _, shard := range s.shards {
 		shard.mu.Lock()
 		now := time.Now().Unix()
-		for key, valueWithTTL := range shard.store {
-			if valueWithTTL.Expiration > 0 && now > valueWithTTL.Expiration {
-				delete(shard.store, key)
+		for shard.heap.Len() > 0 {
+			// Get the entry with the smallest expiration time
+			entry := heap.Pop(&shard.heap).(heapEntry)
+			// If the smallest expiration time is in the future, stop the cleanup
+			if entry.valueWithTTL.Expiration > now {
+				heap.Push(&shard.heap, entry)
+				// Push it back to the heap
+				break
+			}
+			// Delete the expired entry from the store
+			if entry.valueWithTTL.Expiration > 0 && now > entry.valueWithTTL.Expiration {
+				delete(shard.store, entry.key)
 			}
 		}
 		shard.mu.Unlock()
