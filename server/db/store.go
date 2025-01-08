@@ -2,6 +2,7 @@ package db
 
 import (
 	"bytes"
+	"container/heap"
 	"encoding/binary"
 	"fmt"
 	"hash/crc32"
@@ -216,8 +217,10 @@ type ShardedInMemoryStore struct {
 
 // mapShard represents a single shard of the in-memory store.
 type mapShard struct {
-	mu    sync.RWMutex
-	store map[string]ValueWithTTL
+	mu       sync.RWMutex
+	store    map[string]ValueWithTTL
+	ttlHeap  TTLHeap
+	heapLock sync.Mutex // Lock for the heap to avoid race conditions
 }
 
 type WALInterface interface {
@@ -258,6 +261,16 @@ func (s *ShardedInMemoryStore) Set(key, value string, ttl int64) {
 		expiration = time.Now().Add(time.Duration(ttl) * time.Second).Unix()
 	}
 	shard.store[key] = ValueWithTTL{Value: value, Expiration: expiration}
+	// Add to the TTL heap if TTL is set
+
+	if ttl > 0 {
+		shard.heapLock.Lock()
+		heap.Push(&shard.ttlHeap, &HeapNode{
+			Expiration: expiration,
+			Key:        key,
+		})
+		shard.heapLock.Unlock()
+	}
 
 	// Log the operation
 	entry := WriteAheadLogEntry{
@@ -313,14 +326,22 @@ func (s *ShardedInMemoryStore) Delete(key string) {
 // Cleanup removes expired keys from the store concurrently.
 func (s *ShardedInMemoryStore) Cleanup() {
 	for _, shard := range s.shards {
-		shard.mu.Lock()
 		now := time.Now().Unix()
-		for key, valueWithTTL := range shard.store {
-			if valueWithTTL.Expiration > 0 && now > valueWithTTL.Expiration {
-				delete(shard.store, key)
+		shard.heapLock.Lock()
+		defer shard.heapLock.Unlock()
+		for shard.ttlHeap.Len() > 0 {
+			// Peek at the root of the heap
+			node := shard.ttlHeap[0]
+			if node.Expiration > now {
+				break // Stop if the nearest expiration is in the future
 			}
+			// Remove expired entry from the heap
+			heap.Pop(&shard.ttlHeap)
+			// Delete the corresponding key from the store
+			shard.mu.Lock()
+			delete(shard.store, node.Key)
+			shard.mu.Unlock()
 		}
-		shard.mu.Unlock()
 	}
 }
 
@@ -403,4 +424,45 @@ func LoadConfigAndCreateStore(configPath string) (*ShardedInMemoryStore, error) 
 func (s *ShardedInMemoryStore) Close() error {
 	s.Cleanup()
 	return s.wal.Close()
+}
+
+// HeapNode represents a single node in the TTL heap.
+
+type HeapNode struct {
+	Expiration int64  // Unix timestamp of expiration
+	Key        string // Key associated with this TTL
+	Index      int    // Index in the heap (used for updates)
+}
+
+// TTLHeap implements a min-heap for managing expirations.
+
+type TTLHeap []*HeapNode
+
+func (h TTLHeap) Len() int { return len(h) }
+
+func (h TTLHeap) Less(i, j int) bool { return h[i].Expiration < h[j].Expiration }
+
+func (h TTLHeap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+	h[i].Index = i
+	h[j].Index = j
+}
+
+// Push adds a new node to the heap.
+
+func (h *TTLHeap) Push(x interface{}) {
+	node := x.(*HeapNode)
+	node.Index = len(*h)
+	*h = append(*h, node)
+}
+
+// Pop removes the node with the smallest expiration.
+
+func (h *TTLHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	node := old[n-1]
+	node.Index = -1 // Mark as removed
+	*h = old[0 : n-1]
+	return node
 }
