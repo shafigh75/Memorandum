@@ -20,6 +20,9 @@ The recent shift towards more restrictive licensing models in some popular datab
 - **Write-Ahead Logging (WAL)**: Logs write operations to ensure data durability and facilitate recovery.
 - **interfaces**: Implemented as a command-line interface and a network server with two http and RPC interfaces so far.
 
+
+## Usage as Standalone service
+
 ## Installation
 To get started with Memorandum, clone the repository and build the project using the simple script:
 
@@ -29,7 +32,6 @@ curl -sSL https://raw.githubusercontent.com/shafigh75/Memorandum/main/build.sh |
 ### NOTE:
 make sure golang is installed on your server or else the build script will not work for you.
 
-## Usage as Standalone service
 ### Running the Server
 To start the Memorandum server, run the following command:
 
