@@ -29,7 +29,7 @@ curl -sSL https://raw.githubusercontent.com/shafigh75/Memorandum/main/build.sh |
 ### NOTE:
 make sure golang is installed on your server or else the build script will not work for you.
 
-## Usage
+## Usage as Standalone srevice(like redis, etc.)
 ### Running the Server
 To start the Memorandum server, run the following command:
 
@@ -65,15 +65,21 @@ Memorandum uses a configuration file to set various parameters such as the numbe
 ```
 **NOTE**: make sure to check the config file and set the values based on your requirements. 
 
-### Example Usage as module
+## Example Usage as module
 Here is an example of how to use the Memorandum library in your Go project:
+
+### Installation
+To get started with Memorandum, you need to have Go installed on your machine. You can install Memorandum by running:
+```bash
+go get -u github.com/shafigh75/Memorandum
+```
 
 ```go
 package main
 
 import (
 "fmt"
-"github.com/shafigh75/Memorandum/db"
+"github.com/shafigh75/Memorandum/server/db"
 )
 
 func main() {
