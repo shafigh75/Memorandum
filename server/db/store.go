@@ -383,6 +383,10 @@ func (s *ShardedInMemoryStore) RecoverFromWAL(filename string) error {
 			return fmt.Errorf("invalid checksum for entry: %v", entry)
 		}
 
+		if entry.IsExpired() {
+			continue
+		}
+
 		switch entry.Action {
 		case "set":
 			s.Set(entry.Key, entry.Value, entry.TTL)
@@ -426,4 +430,11 @@ func LoadConfigAndCreateStore(configPath string) (*ShardedInMemoryStore, error) 
 func (s *ShardedInMemoryStore) Close() error {
 	s.Cleanup()
 	return s.wal.Close()
+}
+
+// IsExpired checks if the entry has expired based on the current time.
+func (entry *WriteAheadLogEntry) IsExpired() bool {
+	currentTime := time.Now().Unix()
+	expirationTime := entry.Timestamp + entry.TTL
+	return currentTime > expirationTime // Return true if current time is greater than expiration time
 }
