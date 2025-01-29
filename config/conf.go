@@ -8,18 +8,22 @@ import (
 
 // Config holds the configuration settings.
 type Config struct {
-	HTTPPort         string `json:"http_port"`
-	RPCPort          string `json:"rpc_port"`
-	CleanupInterval  int64  `json:"cleanup_interval"` // in seconds
-	AuthEnabled      bool   `json:"auth_enabled"`
-	AuthToken        string `json:"auth_token"`     // Token for authentication
-	WalPath          string `json:"WAL_path"`       // Token for authentication
-	HttpLogPath      string `json:"http_log_path"`  // Token for authentication
-	RPCLogPath       string `json:"rpc_log_path"`   // Token for authentication
-	WalBufferSize    int    `json:"WAL_bufferSize"` // Token for authentication
-	WalEnabled       bool   `json:"wal_enabled"`
-	WalFlushInterval int    `json:"WAL_flushInterval"` // Token for authentication
-	NumShards        int    `json:"shard_count"`       // Token for authentication
+	HTTPPort            string `json:"http_port"`            // port for http
+	RPCPort             string `json:"rpc_port"`             // port for rpc
+	ClusterPort         string `json:"cluster_port"`         // port for clustreing
+	CleanupInterval     int64  `json:"cleanup_interval"`     // memory cleanup interval in seconds
+	HeartbeatInterval   int64  `json:"heartbeat_interval"`   // check nodes health interval in seconds
+	ConfigCheckInterval int64  `json:"configCheck_interval"` // interval to re-add nodes in seconds
+	AuthEnabled         bool   `json:"auth_enabled"`         // set to true to enable auth
+	AuthToken           string `json:"auth_token"`           // Token for authentication
+	WalPath             string `json:"WAL_path"`             // path for wal.bin file
+	HttpLogPath         string `json:"http_log_path"`        // http log file path
+	RPCLogPath          string `json:"rpc_log_path"`         // rpc log file path
+	WalBufferSize       int    `json:"WAL_bufferSize"`       // buffer size for each wal flush
+	WalEnabled          bool   `json:"wal_enabled"`          // turn wal logging on or off
+	WalFlushInterval    int    `json:"WAL_flushInterval"`    // wal flush interval in seconds
+	NumShards           int    `json:"shard_count"`          // number of node shards
+	ReplicaCount        int    `json:"replica_count"`        // number of nodes to replicate our data
 }
 
 // LoadConfig reads the configuration from a JSON file.

@@ -108,6 +108,11 @@ func (s *RPCService) RPCDelete(req *RPCRequest, resp *RPCResponse) error {
 	return nil
 }
 
+func (s *RPCService) Ping(args struct{}, reply *bool) error {
+	*reply = true
+	return nil
+}
+
 // StartRPCServer starts the RPC server.
 func StartRPCServer(store *db.ShardedInMemoryStore, port string, logger *logger.Logger) {
 	rpcService := &RPCService{Store: store, Logger: logger}

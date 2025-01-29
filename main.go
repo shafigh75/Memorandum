@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/shafigh75/Memorandum/cluster"
+
 	"github.com/shafigh75/Memorandum/config"
 	"github.com/shafigh75/Memorandum/server/db"
 	httpHandler "github.com/shafigh75/Memorandum/server/http"
@@ -74,6 +76,8 @@ func main() {
 	rpcLogPath := config.RPCLogPath
 	rpcLogger, err := Logger.NewLogger(rpcLogPath)
 	go rpcHandler.StartRPCServer(store, config.RPCPort, rpcLogger)
+
+	go cluster.StartHTTPServer(config.ClusterPort)
 
 	// Channel to listen for shutdown signals
 	signalChan := make(chan os.Signal, 1)
