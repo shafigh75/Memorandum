@@ -321,8 +321,8 @@ Response:
     {
       "success": true,
       "data": {
-        "name": "Alice",
-        "age": "30"
+        "name": "mohammad",
+        "age": "28"
       }
     }
 ```
@@ -340,7 +340,7 @@ Response:
 ```json   
     {
       "success": true,
-      "data": "Alice"
+      "data": "mohammad"
     }
 ```
 
@@ -374,7 +374,7 @@ Response:
 ```json   
     {
       "success": true,
-      "data": ["127.0.0.1:1234", "5.252.216.156:1234"]
+      "data": ["127.0.0.1:1234", "1.1.1.1:1234"]
     }
 ```
 
