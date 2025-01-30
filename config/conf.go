@@ -21,6 +21,7 @@ type Config struct {
 	RPCLogPath          string `json:"rpc_log_path"`         // rpc log file path
 	WalBufferSize       int    `json:"WAL_bufferSize"`       // buffer size for each wal flush
 	WalEnabled          bool   `json:"wal_enabled"`          // turn wal logging on or off
+	ClusterEnabled      bool   `json:"cluster_enabled"`      // turn wal logging on or off
 	WalFlushInterval    int    `json:"WAL_flushInterval"`    // wal flush interval in seconds
 	NumShards           int    `json:"shard_count"`          // number of node shards
 	ReplicaCount        int    `json:"replica_count"`        // number of nodes to replicate our data
