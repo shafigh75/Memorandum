@@ -64,12 +64,14 @@ Memorandum uses a configuration file to set various parameters such as the numbe
   "configCheck_interval": 10,
   "auth_enabled": true,
   "wal_enabled": true,
+  "cluster_enabled": true,
   "shard_count": 32,
   "replica_count": 0,
   "auth_token": "f5e0c51b7f3c6e6b57deb13b3017c32e"
 }
 ```
-**NOTE**: make sure to check the config file and set the values based on your requirements. 
+**NOTE**: make sure to check the config file and set the values based on your requirements.
+**NOTE**: In cli there is a `passwd` command that will generate a new auth token for you :)
 
 ## Usage as module
 Here is an example of how to use the Memorandum library in your Go project:
@@ -194,6 +196,10 @@ The `config.json` file is used to configure various aspects of the Memorandum in
 - **replica_count**: Specifies the number of nodes the data will be replicated to. starting from 0 (meaning no replication, data is stored on one node only) to n-1 (n is the total node count).
 - Example: `0`
 
+### clustering enabled
+- **cluster_enabled**: Specifies whether clustering is enabled or is it running as standalone server with a single node.
+- Example: `true`
+
 ### Authentication
 - **auth_enabled**: Enables or disables authentication.
 - Example: `true`
@@ -226,6 +232,7 @@ The `config.json` file is used to configure various aspects of the Memorandum in
   "configCheck_interval": 10,
   "auth_enabled": true,
   "wal_enabled": true,
+  "cluster_enabled": true,
   "shard_count": 32,
   "replica_count": 0,
   "auth_token": "f5e0c51b7f3c6e6b57deb13b3017c32e"
