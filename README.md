@@ -53,15 +53,19 @@ Memorandum uses a configuration file to set various parameters such as the numbe
 {
   "http_port": ":6060",
   "rpc_port": ":1234",
-  "WAL_path": "/home/test/Memorandum/data/WAL.gz",
+  "cluster_port": ":5036",
+  "WAL_path": "/home/test/Memorandum/data/wal.bin",
   "http_log_path": "/home/test/Memorandum/logs/http.log",
   "rpc_log_path": "/home/test/Memorandum/logs/rpc.log",
   "WAL_bufferSize": 4096,
   "WAL_flushInterval": 30,
   "cleanup_interval": 10,
+  "heartbeat_interval": 10,
+  "configCheck_interval": 10,
   "auth_enabled": true,
-  "wal_enabled": false,
+  "wal_enabled": true,
   "shard_count": 32,
+  "replica_count": 0,
   "auth_token": "f5e0c51b7f3c6e6b57deb13b3017c32e"
 }
 ```
@@ -154,6 +158,9 @@ The `config.json` file is used to configure various aspects of the Memorandum in
 - **rpc_port**: Specifies the port on which the RPC server listens.
 - Example: `":1234"`
 
+- **cluster_port**: Specifies the port on which the http cluster server listens.
+- Example: `":5036"`
+
 ### Paths
 - **WAL_path**: Specifies the path to the Write-Ahead Log (WAL) file.
 - Example: `"/home/test/Memorandum/data/wal.bin"`
@@ -175,6 +182,18 @@ The `config.json` file is used to configure various aspects of the Memorandum in
 - **cleanup_interval**: Specifies the interval (in seconds) at which expired keys are cleaned up.
 - Example: `10`
 
+### heartbeat Configuration
+- **heartbeat_interval**: Specifies the interval (in seconds) at which the nodes in cluster will be checked.
+- Example: `100`
+
+### re-add to cluster Configuration
+- **configCheck_interval**: Specifies the interval (in seconds) at which the disabled nodes in cluster will be checked and re-add to cluster if node is up again.
+- Example: `100`
+
+### replication factor
+- **replica_count**: Specifies the number of nodes the data will be replicated to. starting from 0 (meaning no replication, data is stored on one node only) to n-1 (n is the total node count).
+- Example: `0`
+
 ### Authentication
 - **auth_enabled**: Enables or disables authentication.
 - Example: `true`
@@ -194,18 +213,22 @@ The `config.json` file is used to configure various aspects of the Memorandum in
 
 ```json
 {
-"http_port": ":6060",
-"rpc_port": ":1234",
-"WAL_path": "/home/test/Memorandum/data/wal.bin",
-"http_log_path": "/home/test/Memorandum/logs/http.log",
-"rpc_log_path": "/home/test/Memorandum/logs/rpc.log",
-"WAL_bufferSize": 4096,
-"WAL_flushInterval": 30,
-"cleanup_interval": 10,
-"auth_enabled": true,
-"wal_enabled": true,
-"shard_count": 32,
-"auth_token": "f5e0c51b7f3c6e6b57deb13b3017c32e"
+  "http_port": ":6060",
+  "rpc_port": ":1234",
+  "cluster_port": ":5036",
+  "WAL_path": "/home/test/Memorandum/data/wal.bin",
+  "http_log_path": "/home/test/Memorandum/logs/http.log",
+  "rpc_log_path": "/home/test/Memorandum/logs/rpc.log",
+  "WAL_bufferSize": 4096,
+  "WAL_flushInterval": 30,
+  "cleanup_interval": 10,
+  "heartbeat_interval": 10,
+  "configCheck_interval": 10,
+  "auth_enabled": true,
+  "wal_enabled": true,
+  "shard_count": 32,
+  "replica_count": 0,
+  "auth_token": "f5e0c51b7f3c6e6b57deb13b3017c32e"
 }
 ```
 
@@ -226,6 +249,156 @@ store.Set("key1", "value1", 60)
 
 // Close the store when done
 defer store.Close()
+```
+
+## Clustering Overview
+
+This project contains distributed clustering capabilities. Features include:
+- **Data Replication**: Uses consistent hashing to distribute keys across nodes.
+- **Health Checks**: Periodic node pinging to detect failures.
+- **Dynamic Node Management**: Nodes can be added via API or `nodes.json` updates.
+- **Authentication**: Optional token-based auth for API endpoints.
+
+
+### Key Components
+1. **ClusterManager**  
+   - Manages node lifecycle (add/remove).
+   - Monitors `nodes.json` for changes.
+   - Performs health checks.
+2. **NodeService**  
+   - Handles RPC calls to nodes for `SET`, `GET`, and `DELETE` operations.
+   - Uses replication (default: 1 replica) for fault tolerance.
+3. **HTTP Server**  
+   - Exposes REST API for data operations and cluster management.
+
+---
+
+**NOTE**: for adding nodes, we can modify the `cluster/nodes.json` file. example of this file:
+```json
+// format of node address: IP + <RPC_PORT>
+{
+  "nodes": [
+    "127.0.0.1:1234",
+    "1.1.1.1:1234",
+    "2.2.2.2:1234"
+  ]
+}
+```
+
+**NOTE**: always add the `127.0.0.1:<RPC_PORT>` as this is crucial for your current node. 
+
+---
+
+
+## API Documentation
+
+### Authentication
+If enabled in `config.json`, include the header:  
+`Authorization: Bearer <AUTH_TOKEN>`
+
+---
+
+### Endpoints
+
+#### 1. Set Key-Value Pair(s)
+- **Method**: `POST`
+- **URL**: `/set`
+- **Body**: 
+
+```json
+  [
+    {
+      "key": "name",
+      "value": "mohammad",
+      "ttl": 3600
+    },
+    {
+      "key": "age",
+      "value": "28",
+      "ttl": 1800
+    }
+  ]
+```
+
+Response:
+```json   
+    {
+      "success": true,
+      "data": {
+        "name": "mohammad",
+        "age": "28"
+      }
+    }
+```
+
+#### 2. Get Key-Value Pair(s)
+- **Method**: `GET`
+- **URL**: `/get/<KEY>`
+- **Body**: 
+
+```json
+THIS REQUEST HAS NO BODY :)
+```
+
+Response:
+```json   
+    {
+      "success": true,
+      "data": "mohammad"
+    }
+```
+
+#### 3. Delete Key
+- **Method**: `DELETE`
+- **URL**: `/delete/<KEY>`
+- **Body**: 
+
+```json
+THIS REQUEST HAS NO BODY :)
+
+```
+
+Response:
+```json   
+    {
+      "success": true
+    }
+```
+
+#### 4. List Active Nodes
+- **Method**: `GET`
+- **URL**: `/nodes`
+- **Body**: 
+
+```json
+THIS REQUEST HAS NO BODY :)
+```
+
+Response:
+```json   
+    {
+      "success": true,
+      "data": ["127.0.0.1:1234", "1.1.1.1:1234"]
+    }
+```
+
+#### 5. Add Node
+- **Method**: `POST`
+- **URL**: `/nodes/add`
+- **Body**: 
+
+```json
+    {
+      "address": "192.168.1.100:1234"
+    }
+```
+
+Response:
+```json   
+    {
+      "success": true,
+      "data": "192.168.1.100:1234"
+    }
 ```
 
 
