@@ -190,6 +190,10 @@ The `config.json` file is used to configure various aspects of the Memorandum in
 - **configCheck_interval**: Specifies the interval (in seconds) at which the disabled nodes in cluster will be checked and re-add to cluster if node is up again.
 - Example: `100`
 
+### replication factor
+- **replica_count**: Specifies the number of nodes the data will be replicated to. starting from 0 (meaning no replication, data is stored on one node only) to n-1 (n is the total node count).
+- Example: `0`
+
 ### Authentication
 - **auth_enabled**: Enables or disables authentication.
 - Example: `true`
