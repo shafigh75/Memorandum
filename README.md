@@ -19,6 +19,7 @@ The recent shift towards more restrictive licensing models in some popular datab
 - **TTL Support**: Optional time-to-live for each key to automatically expire data.
 - **Write-Ahead Logging (WAL)**: Logs write operations to ensure data durability and facilitate recovery.
 - **interfaces**: Implemented as a command-line interface and a network server with two http and RPC interfaces so far.
+- **clustering**: This project contains distributed clustering capabilities. Features include: Data Replication, Health Checks, Dynamic Node Management and Authentication.
 
 
 ## Usage as Standalone service
