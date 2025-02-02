@@ -89,14 +89,14 @@ func (cm *ClusterManager) StartHealthCheck() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		cm.Mutex.Lock()
 		for _, node := range cm.Nodes {
 			if !cm.PingNode(node.Address) {
+				cm.Mutex.Lock()
 				node.Active = false
 				log.Printf("Node inactive: %s", node.Address)
+				cm.Mutex.Unlock()
 			}
 		}
-		cm.Mutex.Unlock()
 	}
 }
 
