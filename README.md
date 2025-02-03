@@ -7,7 +7,7 @@
 <hr>
 
 ## Overview
-**Memorandum** is an open-source, self-hosted, sharded in-memory key-value store written in Go, designed for efficient storage and retrieval of data with support for TTL (time-to-live) and Write-Ahead Logging (WAL). It was developed in response to recent changes in popular database licensing models (read [this](https://www.theregister.com/2024/03/22/redis_changes_license/) for details). This project serves as a learning resource for building in-memory databases and understanding database internals.
+**Memorandum** is an open-source, self-hosted, sharded in-memory key-value store written in Go, designed for efficient storage and retrieval of data with support for TTL (time-to-live) and Write-Ahead Logging (WAL) with clustering capabilities. It was developed in response to recent changes in popular database licensing models (read [this](https://www.theregister.com/2024/03/22/redis_changes_license/) for details). This project serves as a learning resource for building in-memory databases and understanding database internals. It also can be used in small to medium scale environments which need a light-weight IMDG. 
 
 ## Background
 
@@ -19,6 +19,7 @@ The recent shift towards more restrictive licensing models in some popular datab
 - **TTL Support**: Optional time-to-live for each key to automatically expire data.
 - **Write-Ahead Logging (WAL)**: Logs write operations to ensure data durability and facilitate recovery.
 - **interfaces**: Implemented as a command-line interface and a network server with two http and RPC interfaces so far.
+- **clustering**: This project contains distributed clustering capabilities. Features include: Data Replication, Health Checks, Dynamic Node Management and Authentication.
 
 
 ## Usage as Standalone service
