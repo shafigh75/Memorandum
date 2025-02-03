@@ -144,6 +144,10 @@ func (cm *ClusterManager) GetNodes(key string, replicas int) []*Node {
 		}
 	}
 	for i := 0; i <= replicas; i++ {
+		if len(active) == 0 {
+			log.Println("Error: There is no active nodes")
+			return nil
+		}
 		idx := (primaryIdx + i) % len(active)
 		if idx < len(active) {
 			nodes = append(nodes, active[idx])
