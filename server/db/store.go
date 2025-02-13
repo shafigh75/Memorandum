@@ -38,6 +38,8 @@ type WAL struct {
 	bufferSize  int
 	flushTicker *time.Ticker
 	flushDone   chan struct{}
+	queue       chan WriteAheadLogEntry
+	queueWG     sync.WaitGroup
 }
 
 // NewWAL creates a new WAL instance.
@@ -53,9 +55,12 @@ func NewWAL(filename string, bufferSize int, flushInterval time.Duration) (*WAL,
 		bufferSize:  bufferSize,
 		flushTicker: time.NewTicker(flushInterval),
 		flushDone:   make(chan struct{}),
+		queue:       make(chan WriteAheadLogEntry, bufferSize),
 	}
 
+	wal.queueWG.Add(1)
 	go wal.startFlushRoutine()
+	go wal.startQueueProcessor()
 	return wal, nil
 }
 
@@ -69,15 +74,7 @@ var isWalRecovery bool
 
 // Log writes a log entry to the WAL.
 func (wal *WAL) Log(entry WriteAheadLogEntry) error {
-	wal.mu.Lock()
-	defer wal.mu.Unlock()
-
-	// Calculate checksum for the entry
-	entry.Checksum = crc32.ChecksumIEEE([]byte(entry.Key + entry.Value))
-	wal.buffer = append(wal.buffer, entry)
-	if len(wal.buffer) >= wal.bufferSize {
-		return wal.flush()
-	}
+	wal.queue <- entry
 	return nil
 }
 
@@ -118,9 +115,27 @@ func (wal *WAL) startFlushRoutine() {
 	}
 }
 
+// startQueueProcessor processes the queue and adds entries to the buffer.
+func (wal *WAL) startQueueProcessor() {
+	defer wal.queueWG.Done()
+	for entry := range wal.queue {
+		wal.mu.Lock()
+		entry.Checksum = crc32.ChecksumIEEE([]byte(entry.Key + entry.Value))
+		wal.buffer = append(wal.buffer, entry)
+		if len(wal.buffer) >= wal.bufferSize {
+			if err := wal.flush(); err != nil {
+				fmt.Println("Error flushing WAL: ", err.Error())
+			}
+		}
+		wal.mu.Unlock()
+	}
+}
+
 // Close closes the WAL file and flushes any remaining entries.
 func (wal *WAL) Close() error {
 	wal.flushTicker.Stop()
+	close(wal.queue)
+	wal.queueWG.Wait()
 	wal.mu.Lock()
 	defer wal.mu.Unlock()
 	if err := wal.flush(); err != nil {
@@ -383,7 +398,7 @@ func (s *ShardedInMemoryStore) RecoverFromWAL(filename string) error {
 			return fmt.Errorf("invalid checksum for entry: %v", entry)
 		}
 
-		if entry.IsExpired() {
+		if entry.TTL != 0 && entry.IsExpired() {
 			continue
 		}
 
