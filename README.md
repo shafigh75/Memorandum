@@ -294,6 +294,7 @@ This project contains distributed clustering capabilities. Features include:
 ```
 
 **NOTE**: always add the `127.0.0.1:<RPC_PORT>` as this is crucial for your current node. 
+**NOTE**: make sure nodes.json file has the same content on all nodes in the cluster.
 
 ---
 
