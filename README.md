@@ -47,7 +47,7 @@ use this command to start the CLI:
 ```
 
 ### Configuration
-Memorandum uses a configuration file to set various parameters such as the number of shards, WAL file path, buffer size, and flush interval. Update the `config.yaml` file with your desired settings(detailed explanation later on).
+Memorandum uses a configuration file to set various parameters such as the number of shards, WAL file path, buffer size, and flush interval. Update the `config.json` file with your desired settings(detailed explanation later on).
 
 ```json
 # Example config/config.json
