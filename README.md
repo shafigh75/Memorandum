@@ -194,8 +194,9 @@ The `config.json` file is used to configure various aspects of the Memorandum in
 - Example: `100`
 
 ### replication factor
-- **replica_count**: Specifies the number of nodes the data will be replicated to. starting from 0 (meaning no replication, data is stored on one node only) to n-1 (n is the total node count).
+- **replica_count**: Specifies the number of nodes the data will be replicated to. starting from 0 (meaning no replication, data is stored on one node only) to n-1 (n is the total node count). 
 - Example: `0`
+**Note**: here the replica means number of nodes other than the primary nodes so for example if you want to replicate to one more node other than the primary node (which is the result of key hashing), use 1. 
 
 ### clustering enabled
 - **cluster_enabled**: Specifies whether clustering is enabled or is it running as standalone server with a single node.
