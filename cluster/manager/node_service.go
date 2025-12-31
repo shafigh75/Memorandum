@@ -120,10 +120,13 @@ func (ns *NodeService) DeleteData(key string, reply *bool) error {
 		return fmt.Errorf("no active nodes available")
 	}
 
+	successCount := 0
+	totalActive := 0
 	for _, node := range nodes {
 		if !node.Active {
 			continue
 		}
+		totalActive++
 
 		client, err := rpc.Dial("tcp", node.Address)
 		if err != nil {
@@ -141,10 +144,14 @@ func (ns *NodeService) DeleteData(key string, reply *bool) error {
 
 		client.Close()
 		if resp.Success {
-			*reply = true
-			return nil
+			successCount++
 		}
 	}
 
-	return fmt.Errorf("all nodes failed to delete key")
+	if successCount == totalActive {
+		*reply = true
+		return nil
+	}
+
+	return fmt.Errorf("failed to delete key from all nodes: %d/%d succeeded", successCount, totalActive)
 }
